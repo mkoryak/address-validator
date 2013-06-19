@@ -1,0 +1,145 @@
+_ = require('underscore')
+request = require('request')
+
+componentFinder = (components) ->
+    return (type, type2="political") ->
+        it = _.find(components, (c) ->
+            return c.types[0] == type && (!type2 || c.types[1] == type2)
+        )
+        return [it?.short_name, it?.long_name]
+
+###
+    Address object that provides useful methods. Create a new one by passing a map with these props: {street:'123 main st', city: 'boston', state: 'MA'|'massachussetts', country: 'US'|'United States'}
+    None of the props are required, but chances are you wont have a valid address if you omit any of them (except for state)
+
+    The validate callback will return to you these objects, except they will have all or some of the following properties:
+        streetNumber: '100'
+        street: 'North Main St'
+        streetAbbr: 'N Main St'
+        city: 'Boston'
+        state: 'Massachussetts'
+        stateAbbr: 'MA'
+        country: 'United States'
+        countryAbbr: 'US'
+        postalCode: 02114
+        location: {lat: 43.233332, lon: 23.2222243}
+
+    Methods:
+        toString(useCountryAbbr, useStateAbbr, useStreetAbbr) - returns a string representing the address. currently geared towards North American addresses
+            useCountryAbbr = [optional] default: true - the resulting address string should use country abbr, not the full country name
+            useStateAbbr   = [optional] default: true - the resulting address string should use state abbr, not the full state name
+            useStreetAbbr  = [optional] default: false - the resulting address string should use street name abbr, not the full street name
+            Note: the abbriviated values will only be used if they are available. The Address objects returned to you from the validate callback may have these available.
+        equals(anotherAddress) - check if 2 addresses are probably* the same. IT DOES NOT CHECK STREET NAME/NUMBER
+
+
+###
+exports.Address = class Address
+    constructor: (address, @generated=false) ->
+        if _.isObject(address) #this gives you higher accuracy because we can compare resulting address parts to the input's address parts and see if its they are the same or not
+            @isObject = true
+            _.each(address, (val, key) =>
+                this[key] = val
+            )
+        else
+            @isObject = false
+            @addressStr = address
+
+    toString: (useCountryAbbr=true, useStateAbbr=true, useStreetAbbr=false) ->
+        return @addressStr if @addressStr
+        arr = []
+        stateVal = if useStateAbbr and @generated then 'stateAbbr' else 'state'
+        countryVal = if useCountryAbbr and @generated then 'countryAbbr' else 'country'
+        streetVal = if useStreetAbbr and @generated then 'streetAbbr' else 'street'
+        for prop in [streetVal, 'city', stateVal, countryVal]
+            arr.push(this[prop]) if this[prop]
+        str = arr.join(', ')
+        if @streetNumber
+            str = "#{this.streetNumber} #{str}"
+        return str
+
+    equals: (address) ->
+        compare = (prop) =>
+            if this[prop] and address[prop]
+                if this[prop].toLowerCase() == address[prop].toLowerCase()
+                    return true
+                if address.generated and address[prop+'Abbr']
+                    return this[prop].toLowerCase() == address[prop+'Abbr'].toLowerCase()
+                else if this.generated and this[prop+'Abbr']
+                    return this[prop+'Abbr'].toLowerCase() == address[prop].toLowerCase()
+                else
+                    return false
+            return !this[prop] and !address[prop]
+        if @isObject and address.isObject
+            return compare('city') && compare('state') && compare('country')
+        return @toString(true).toLowerCase() == address.toString(true).toLowerCase()
+
+
+###
+    validate an input address.
+
+    inputAddr: validator.Address object or map with 'street', 'city', 'state', 'country' keys, or string address
+    cb: function(err, validAddresses, inexactMatches, geocodingResponse)
+        err - something went wrong calling the google api
+        validAddresses - list of Address objects. These are exact matches to your input, and will have proper spelling, caps etc. Its best that you use this instead of what you had
+        inexactMatches - list of Address objects. Incomplete addresses or addresses that do not match your input address. useful for 'did you mean?' type UIs
+        geocodingResponse - the json object that i got from google API
+
+###
+exports.validate = (inputAddr, cb) ->
+    inputAddress =  if inputAddr instanceof Address then inputAddr else new Address(inputAddr)
+
+    qs = {'sensor':false, 'address': inputAddress.toString()}
+
+    opts =
+        json: true,
+        url: "http://maps.googleapis.com/maps/api/geocode/json"
+        method: 'GET'
+        qs: qs
+
+    request(opts, (err, response, body) ->
+        return cb(err, null, null) if err
+        if body.results.length == 0
+            return cb(null, [], [], body)
+        if response.statusCode != 200
+            return cb(new Error('Google geocode API returned status code of #{response.statusCode}', [], [], body))
+
+        validAddresses = []
+        inexactMatches = []
+        _.each(body.results, (result) ->
+            isStreetAddress = _.include(result.types or [], 'street_address')
+            location =
+                lat: result.geometry?.location?.lat
+                lon: result.geometry?.location?.lng
+
+            getComponent = componentFinder(result.address_components)
+            [x, streetNum] = getComponent('street_number', false)
+            [streetAbbr, street] = getComponent('route', false)
+            [x, city] = getComponent('locality')
+            [stateAbbr, state] = getComponent('administrative_area_level_1')
+            [countryAbbr, country] = getComponent('country')
+            [postalCode, x] = getComponent('postal_code', false)
+            address = new Address(
+                streetNumber: streetNum
+                street: street
+                streetAbbr: streetAbbr
+                city: city
+                state: state
+                stateAbbr: stateAbbr
+                country: country
+                countryAbbr: countryAbbr
+                postalCode: postalCode
+                location: location
+            , true)
+
+            if isStreetAddress
+                if address.equals(inputAddress)
+                    validAddresses.push(address)
+                else
+                    inexactMatches.push(address)
+            else
+                inexactMatches.push(address)
+        )
+        cb(null, validAddresses, inexactMatches, body)
+
+    )
