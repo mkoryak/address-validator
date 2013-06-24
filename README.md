@@ -1,5 +1,6 @@
-node-address-validator
+address-validator
 ======================
+
 
 Validate street addresses in nodejs using google geocoding api.
 
@@ -7,8 +8,13 @@ From an input address the lib will return to you a valid address with correct sp
 
 Currently geared towards North American Addresses.
 
+Install
+-------
+npm install address-validator
+
+
 Using
-=====
+-----
 
 
 ```
