@@ -46,7 +46,7 @@ exports.Address = class Address
             @addressStr = address
 
     toString: (useCountryAbbr=true, useStateAbbr=true, useStreetAbbr=false) ->
-        return @addressStr if @addressStr
+        return @addressStr if not @isObject
         arr = []
         stateVal = if useStateAbbr and @generated then 'stateAbbr' else 'state'
         countryVal = if useCountryAbbr and @generated then 'countryAbbr' else 'country'
@@ -72,7 +72,7 @@ exports.Address = class Address
             return !this[prop] and !address[prop]
         if @isObject and address.isObject
             return compare('city') && compare('state') && compare('country')
-        return @toString(true).toLowerCase() == address.toString(true).toLowerCase()
+        return @toString().toLowerCase() == address.toString.toLowerCase()
 
 
 ###
