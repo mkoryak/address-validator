@@ -32,6 +32,7 @@ address5 =
     state: 'Massachussetts'
     country: 'US'
 
+
 address6 =
     street: '1 Main St'
     city: 'San Diego'
@@ -55,5 +56,9 @@ validateAddress(address3)
 validateAddress(address4)
 validateAddress(address5)
 validateAddress(address6)
-validateAddress('12 proctor rd townsend Mass')
+validateAddress('12 proctor rd townsend, Mass')
 validateAddress('100 north washington st, bostont')
+validateAddress('Boston, MA')
+validateAddress('Boston, MA, USA')
+validateAddress('MA')
+validateAddress('Sibirskaya 22, Novosibirks, Russia')

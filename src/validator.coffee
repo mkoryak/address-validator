@@ -102,7 +102,47 @@ exports.Address = class Address
             return !this[prop] and !address[prop]
         if @isObject and address.isObject
             return compare('city') && compare('state') && compare('country')
-        return @toString().toLowerCase() == address.toString().toLowerCase()
+        else if @isObject and not address.isObject
+            #address was provided as a string, and now we must check if the provided address is indeed one of the ones returned
+            props = ['streetNumber', 'street', 'city', 'state', 'country', 'postalCode']
+            otherAddress = address.toString().toLowerCase();
+
+            foundProps = 0
+            haveProps = 0
+            find = (val) ->
+                val = val.toLowerCase()
+                oldlen = otherAddress.length
+                otherAddress = otherAddress.replace(new RegExp("\\b"+val+"\\b"), "")
+                if oldlen != otherAddress.length
+                    foundProps++
+                    return true
+                return false
+
+            for prop in props
+                value = @[prop]
+                if value != undefined
+                    found = find(@[prop])
+                    if not found and prop in ["state", "country", "street"] and @[prop+"Abbr"] != undefined
+                        found = find(@[prop+"Abbr"])
+                    if not found and prop == "country" and value.toLowerCase() == "united states"
+                        found = find("usa")
+                    if not found and prop == "street"
+                        value = value.replace(/( street)/i, ' st')
+                        found = find(value)
+                        if not found
+                            value = value.replace(/( road)/i, ' rd')
+                            find(value)
+                    haveProps++
+
+            otherAddress = otherAddress.replace(/[ ,]/g, '')
+            #console.log("found:"+foundProps+" have:"+haveProps+" left: ["+otherAddress+"]")
+            return foundProps == haveProps and otherAddress.length == 0
+
+
+
+
+        else
+            return @toString().toLowerCase() == address.toString().toLowerCase()
 
 
 ###
@@ -129,25 +169,22 @@ exports.validate = (inputAddr, cb) ->
 
     request(opts, (err, response, body) ->
         return cb(err, null, null) if err
-        if body.results.length == 0
-            return cb(null, [], [], body)
-        if response.statusCode != 200
-            return cb(new Error('Google geocode API returned status code of #{response.statusCode}', [], [], body))
+            if body.results.length == 0
+                return cb(null, [], [], body)
+            if response.statusCode != 200
+                return cb(new Error('Google geocode API returned status code of #{response.statusCode}', [], [], body))
 
-        validAddresses = []
-        inexactMatches = []
-        _.each(body.results, (result) ->
-            isStreetAddress = _.include(result.types or [], 'street_address')
-            address = new Address(result)
+            validAddresses = []
+            inexactMatches = []
+            _.each(body.results, (result) ->
+                address = new Address(result)
 
-            if isStreetAddress
                 if address.equals(inputAddress)
                     validAddresses.push(address)
                 else
                     inexactMatches.push(address)
-            else
-                inexactMatches.push(address)
-        )
-        cb(null, validAddresses, inexactMatches, body)
+
+            )
+            cb(null, validAddresses, inexactMatches, body)
 
     )
