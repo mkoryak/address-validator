@@ -169,22 +169,21 @@ exports.validate = (inputAddr, cb) ->
 
     request(opts, (err, response, body) ->
         return cb(err, null, null) if err
-            if body.results.length == 0
-                return cb(null, [], [], body)
-            if response.statusCode != 200
-                return cb(new Error('Google geocode API returned status code of #{response.statusCode}', [], [], body))
+        if body.results.length == 0
+            return cb(null, [], [], body)
+        if response.statusCode != 200
+            return cb(new Error('Google geocode API returned status code of #{response.statusCode}', [], [], body))
 
-            validAddresses = []
-            inexactMatches = []
-            _.each(body.results, (result) ->
-                address = new Address(result)
+        validAddresses = []
+        inexactMatches = []
+        _.each(body.results, (result) ->
+            address = new Address(result)
 
-                if address.equals(inputAddress)
-                    validAddresses.push(address)
-                else
-                    inexactMatches.push(address)
+            if address.equals(inputAddress)
+                validAddresses.push(address)
+            else
+                inexactMatches.push(address)
 
-            )
-            cb(null, validAddresses, inexactMatches, body)
-
+        )
+        cb(null, validAddresses, inexactMatches, body)
     )
