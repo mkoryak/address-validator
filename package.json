@@ -1,12 +1,13 @@
 {
     "name": "address-validator",
     "description": "Validate street addresses via google's geocoding API. Get back valid addresses with lat/lon coords and a set of inexact matches",
+    "keywords": ["address", "validator", "address validator", "google geocoding", "geocoding", "google maps"],
     "homepage": "https://github.com/mkoryak/address-validator",
     "author": {
         "name": "Misha Koryak",
         "url": "http://www.programmingdrunk.com"
     },
-    "version": "0.0.3",
+    "version": "0.0.4",
     "repository": {
         "type": "git",
         "url": "git://github.com/mkoryak/address-validator.git"
