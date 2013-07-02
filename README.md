@@ -12,6 +12,7 @@ Install
 -------
 npm install address-validator
 
+[on npm registry](https://npmjs.org/package/address-validator)
 
 Using
 -----
