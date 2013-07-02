@@ -93,26 +93,30 @@ API
     addressValidator.Address
     ------------------------
 
-    Address object that provides useful methods. Create a new one by passing a map with these props: {street:'123 main st', city: 'boston', state: 'MA'|'massachussetts', country: 'US'|'United States'}
-    None of the props are required, but chances are you wont have a valid address if you omit any of them (except for state)
+    Address object that provides useful methods. Create a new one by
+          1. passing a map with these props: {street:'123 main st', city: 'boston', state: 'MA'|'massachussetts', country: 'US'|'United States'}
+            None of the props are required, but chances are you wont have a valid address if you omit any of them (except for state)
+          2. passing a string containing an address (the address class does not parse the string into parts)
+          3. passing a result object from a google geocoding response. ie: geoResponse.results[0]
 
-    The validate callback will return to you these objects, except they will have all or some of the following properties:
-        streetNumber: '100'
-        street: 'North Main St'
-        streetAbbr: 'N Main St'
-        city: 'Boston'
-        state: 'Massachussetts'
-        stateAbbr: 'MA'
-        country: 'United States'
-        countryAbbr: 'US'
-        postalCode: 02114
-        location: {lat: 43.233332, lon: 23.2222243}
 
-    Methods:
-        toString(useCountryAbbr, useStateAbbr, useStreetAbbr) - returns a string representing the address. currently geared towards North American addresses
-            useCountryAbbr = [optional] default: true - the resulting address string should use country abbr, not the full country name
-            useStateAbbr   = [optional] default: true - the resulting address string should use state abbr, not the full state name
-            useStreetAbbr  = [optional] default: false - the resulting address string should use street name abbr, not the full street name
-            Note: the abbriviated values will only be used if they are available. The Address objects returned to you from the validate callback may have these available.
-        equals(anotherAddress) - check if 2 addresses are probably* the same. IT DOES NOT CHECK STREET NAME/NUMBER
+        The validator.validate callback will return to you these objects, except they will have all or some of the following properties:
+            streetNumber: '100'
+            street: 'North Main St'
+            streetAbbr: 'N Main St'
+            city: 'Boston'
+            state: 'Massachussetts'
+            stateAbbr: 'MA'
+            country: 'United States'
+            countryAbbr: 'US'
+            postalCode: 02114
+            location: {lat: 43.233332, lon: 23.2222243}
+
+        Methods:
+            toString(useCountryAbbr, useStateAbbr, useStreetAbbr) - returns a string representing the address. currently geared towards North American addresses
+                useCountryAbbr = [optional] default: true - the resulting address string should use country abbr, not the full country name
+                useStateAbbr   = [optional] default: true - the resulting address string should use state abbr, not the full state name
+                useStreetAbbr  = [optional] default: false - the resulting address string should use street name abbr, not the full street name
+                Note: the abbriviated values will only be used if they are available. The Address objects returned to you from the validate callback may have these available.
+            equals(anotherAddress) - check if 2 addresses are probably* the same. IT DOES NOT CHECK STREET NAME/NUMBER
 

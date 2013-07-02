@@ -1,18 +1,15 @@
 _ = require('underscore')
 request = require('request')
 
-componentFinder = (components) ->
-    return (type, type2="political") ->
-        it = _.find(components, (c) ->
-            return c.types[0] == type && (!type2 || c.types[1] == type2)
-        )
-        return [it?.short_name, it?.long_name]
-
 ###
-    Address object that provides useful methods. Create a new one by passing a map with these props: {street:'123 main st', city: 'boston', state: 'MA'|'massachussetts', country: 'US'|'United States'}
-    None of the props are required, but chances are you wont have a valid address if you omit any of them (except for state)
+    Address object that provides useful methods. Create a new one by
+      1. passing a map with these props: {street:'123 main st', city: 'boston', state: 'MA'|'massachussetts', country: 'US'|'United States'}
+        None of the props are required, but chances are you wont have a valid address if you omit any of them (except for state)
+      2. passing a string containing an address (the address class does not parse the string into parts)
+      3. passing a result object from a google geocoding response. ie: geoResponse.results[0]
 
-    The validate callback will return to you these objects, except they will have all or some of the following properties:
+
+    The validator.validate callback will return to you these objects, except they will have all or some of the following properties:
         streetNumber: '100'
         street: 'North Main St'
         streetAbbr: 'N Main St'
@@ -35,15 +32,48 @@ componentFinder = (components) ->
 
 ###
 exports.Address = class Address
-    constructor: (address, @generated=false) ->
-        if _.isObject(address) #this gives you higher accuracy because we can compare resulting address parts to the input's address parts and see if its they are the same or not
-            @isObject = true
-            _.each(address, (val, key) =>
-                this[key] = val
+
+    constructor: (address) ->
+      if _.isObject(address) #this gives you higher accuracy because we can compare resulting address parts to the input's address parts and see if its they are the same or not
+        @isObject = true
+        if address.address_components #the address is parsed from a response from google geocoding
+          @generated = true
+          location =
+            lat: address.geometry?.location?.lat
+            lon: address.geometry?.location?.lng
+
+          getComponent = @componentFinder(address.address_components)
+          [x, streetNum] = getComponent('street_number', false)
+          [streetAbbr, street] = getComponent('route', false)
+          [x, city] = getComponent('locality')
+          [stateAbbr, state] = getComponent('administrative_area_level_1')
+          [countryAbbr, country] = getComponent('country')
+          [postalCode, x] = getComponent('postal_code', false)
+          address =
+            streetNumber: streetNum
+            street: street
+            streetAbbr: streetAbbr
+            city: city
+            state: state
+            stateAbbr: stateAbbr
+            country: country
+            countryAbbr: countryAbbr
+            postalCode: postalCode
+            location: location
+
+        _.each(address, (val, key) =>
+            this[key] = val
+        )
+      else
+        @isObject = false
+        @addressStr = address
+
+    componentFinder: (components) ->
+        return (type, type2="political") ->
+            it = _.find(components, (c) ->
+                return c.types[0] == type && (!type2 || c.types[1] == type2)
             )
-        else
-            @isObject = false
-            @addressStr = address
+            return [it?.short_name, it?.long_name]
 
     toString: (useCountryAbbr=true, useStateAbbr=true, useStreetAbbr=false) ->
         return @addressStr if not @isObject
@@ -72,7 +102,7 @@ exports.Address = class Address
             return !this[prop] and !address[prop]
         if @isObject and address.isObject
             return compare('city') && compare('state') && compare('country')
-        return @toString().toLowerCase() == address.toString.toLowerCase()
+        return @toString().toLowerCase() == address.toString().toLowerCase()
 
 
 ###
@@ -108,29 +138,7 @@ exports.validate = (inputAddr, cb) ->
         inexactMatches = []
         _.each(body.results, (result) ->
             isStreetAddress = _.include(result.types or [], 'street_address')
-            location =
-                lat: result.geometry?.location?.lat
-                lon: result.geometry?.location?.lng
-
-            getComponent = componentFinder(result.address_components)
-            [x, streetNum] = getComponent('street_number', false)
-            [streetAbbr, street] = getComponent('route', false)
-            [x, city] = getComponent('locality')
-            [stateAbbr, state] = getComponent('administrative_area_level_1')
-            [countryAbbr, country] = getComponent('country')
-            [postalCode, x] = getComponent('postal_code', false)
-            address = new Address(
-                streetNumber: streetNum
-                street: street
-                streetAbbr: streetAbbr
-                city: city
-                state: state
-                stateAbbr: stateAbbr
-                country: country
-                countryAbbr: countryAbbr
-                postalCode: postalCode
-                location: location
-            , true)
+            address = new Address(result)
 
             if isStreetAddress
                 if address.equals(inputAddress)

@@ -1,7 +1,7 @@
 {
     "name": "address-validator",
     "description": "Validate street addresses via google's geocoding API. Get back valid addresses with lat/lon coords and a set of inexact matches",
-    "homepage": "https://github.com/mkoryak/node-address-validator",
+    "homepage": "https://github.com/mkoryak/address-validator",
     "author": {
         "name": "Misha Koryak",
         "url": "http://www.programmingdrunk.com"
@@ -9,7 +9,7 @@
     "version": "0.0.3",
     "repository": {
         "type": "git",
-        "url": "git://github.com/mkoryak/node-address-validator.git"
+        "url": "git://github.com/mkoryak/address-validator.git"
     },
   "dependencies": {
     "coffee-script": "~1.6.2",
