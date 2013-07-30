@@ -106,13 +106,16 @@ exports.Address = class Address
             #address was provided as a string, and now we must check if the provided address is indeed one of the ones returned
             props = ['streetNumber', 'street', 'city', 'state', 'country', 'postalCode']
             otherAddress = address.toString().toLowerCase();
-
+            if @toString() == otherAddress
+              return true
+                
+                
             foundProps = 0
             haveProps = 0
             find = (val) ->
                 val = val.toLowerCase()
                 oldlen = otherAddress.length
-                otherAddress = otherAddress.replace(new RegExp("\\b"+val+"\\b"), "")
+                otherAddress = otherAddress.replace(new RegExp("\\b"+val+"\\b", "i"), "")
                 if oldlen != otherAddress.length
                     foundProps++
                     return true
@@ -132,14 +135,13 @@ exports.Address = class Address
                         if not found
                             value = value.replace(/( road)/i, ' rd')
                             find(value)
+                    if not found and prop == "postalCode"
+                      haveProps-- #these arent always specified. if the rest of the address matches we dont care about this
                     haveProps++
 
             otherAddress = otherAddress.replace(/[ ,]/g, '')
             #console.log("found:"+foundProps+" have:"+haveProps+" left: ["+otherAddress+"]")
             return foundProps == haveProps and otherAddress.length == 0
-
-
-
 
         else
             return @toString().toLowerCase() == address.toString().toLowerCase()

@@ -146,13 +146,16 @@
       } else if (this.isObject && !address.isObject) {
         props = ['streetNumber', 'street', 'city', 'state', 'country', 'postalCode'];
         otherAddress = address.toString().toLowerCase();
+        if (this.toString() === otherAddress) {
+          return true;
+        }
         foundProps = 0;
         haveProps = 0;
         find = function(val) {
           var oldlen;
           val = val.toLowerCase();
           oldlen = otherAddress.length;
-          otherAddress = otherAddress.replace(new RegExp("\\b" + val + "\\b"), "");
+          otherAddress = otherAddress.replace(new RegExp("\\b" + val + "\\b", "i"), "");
           if (oldlen !== otherAddress.length) {
             foundProps++;
             return true;
@@ -177,6 +180,9 @@
                 value = value.replace(/( road)/i, ' rd');
                 find(value);
               }
+            }
+            if (!found && prop === "postalCode") {
+              haveProps--;
             }
             haveProps++;
           }
