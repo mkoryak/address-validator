@@ -1,6 +1,87 @@
 _ = require('underscore')
 request = require('request')
 
+options = 
+  countryBias: "us" #more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
+  countryMatch: null #match results in this country only. (ISO 3166-1 country code)
+
+exports.setOptions = (countryBias, countryMatch=null) ->
+  options.countryBias = countryBias
+  options.countryMatch = countryMatch
+
+  
+matchUnknownType = (known, unknown) ->
+    compare = (prop) =>
+      if known[prop] and unknown[prop]
+        if known[prop].toLowerCase() == unknown[prop].toLowerCase()
+          return true
+        if unknown.generated and unknown[prop+'Abbr']
+          return known[prop].toLowerCase() == unknown[prop+'Abbr'].toLowerCase()
+        else if known.generated and known[prop+'Abbr']
+          return known[prop+'Abbr'].toLowerCase() == unknown[prop].toLowerCase()
+        else
+          return false
+      return !known[prop] and !unknown[prop]
+    if known.isObject and unknown.isObject
+      return compare('city') && compare('state') && compare('country')
+    else if known.isObject and not unknown.isObject
+      #unknown was provided as a string, and now we must check if the provided address is indeed one of the ones returned
+      props = ['streetNumber', 'street', 'city', 'state', 'country', 'postalCode']
+      otherAddress = unknown.toString().toLowerCase();
+      if known.toString() == otherAddress
+        return true
+
+      foundProps = 0
+      haveProps = 0
+      find = (val) ->
+        val = val.toLowerCase()
+        oldlen = otherAddress.length
+        otherAddress = otherAddress.replace(new RegExp("\\b"+val+"\\b", "i"), "")
+        if oldlen != otherAddress.length
+          foundProps++
+          return true
+        return false
+
+      for prop in props
+        value = known[prop]
+        if value != undefined
+          found = find(value)
+          if not found and prop in ["state", "country", "street"] and known[prop+"Abbr"] != undefined
+            found = find(known[prop+"Abbr"])
+          if not found and prop == "country" and value.toLowerCase() == "united states"
+            found = find("usa")
+          if not found and prop == "street"
+            value = value.replace(/( street)/i, ' st')
+            found = find(value)
+            if not found
+              value = value.replace(/( road)/i, ' rd')
+              find(value)
+          if not found and prop == "postalCode"
+            haveProps-- #these arent always specified. if the rest of the address matches we dont care about this
+          haveProps++
+
+      otherAddress = otherAddress.replace(/[ ,]/g, '')
+      #console.log("found:"+foundProps+" have:"+haveProps+" left: ["+otherAddress+"]")
+      return foundProps == haveProps and otherAddress.length == 0
+
+    else
+      return known.toString().toLowerCase() == unknown.toString().toLowerCase()
+
+
+
+addressMatch =
+  streetAddress: [{location_type: "ROOFTOP", types: ["street_address"], exact: true}, {location_type: "RANGE_INTERPOLATED", types: ["street_address"], exact: falsefalse}]
+  route: [{location_type: "GEOMETRIC_CENTER", types: ["route"], exact: true}]
+  city: [{location_type: "APPROXIMATE", types: [ "locality", "political" ], exact: true}]
+  state: [{location_type: "APPROXIMATE", types:  [ "administrative_area_level_1", "political" ], exact: true}]
+  country: [{location_type: "APPROXIMATE", types:  [ "country", "political" ], exact: true}]
+  unknown: [{location_type: "unknown", types:  ["unknown"], exact: true}] #wont match anything in the response.
+
+exports.match = matchType = {}
+_.each(addressMatch, (list, name) ->
+  matchType[name] = name
+)
+
 ###
     Address object that provides useful methods. Create a new one by
       1. passing a map with these props: {street:'123 main st', city: 'boston', state: 'MA'|'massachussetts', country: 'US'|'United States'}
@@ -32,8 +113,10 @@ request = require('request')
 
 ###
 exports.Address = class Address
-
-    constructor: (address) ->
+   
+    matchType: matchType.unknown
+    exactMatch: null #can only be set on a @generated address
+    constructor: (address, @isObject=false, @generated=false) ->
       if _.isObject(address) #this gives you higher accuracy because we can compare resulting address parts to the input's address parts and see if its they are the same or not
         @isObject = true
         if address.address_components #the address is parsed from a response from google geocoding
@@ -41,6 +124,18 @@ exports.Address = class Address
           location =
             lat: address.geometry?.location?.lat
             lon: address.geometry?.location?.lng
+
+          #figure out the match type
+          @exactMatch = not address.partial_match
+          _.each(addressMatch, (list, name) =>
+            _.each(list, (obj) =>
+              if(obj.location_type == address.geometry.location_type and _.difference(obj.types, address.types).length == 0)
+                @matchType = name
+                if not obj.exact
+                  @exactMatch = false
+            )
+          )
+          
 
           getComponent = @componentFinder(address.address_components)
           [x, streetNum] = getComponent('street_number', false)
@@ -60,12 +155,12 @@ exports.Address = class Address
             countryAbbr: countryAbbr
             postalCode: postalCode
             location: location
-
+          
+          
         _.each(address, (val, key) =>
             this[key] = val
         )
       else
-        @isObject = false
         @addressStr = address
 
     componentFinder: (components) ->
@@ -87,65 +182,7 @@ exports.Address = class Address
         if @streetNumber
             str = "#{this.streetNumber} #{str}"
         return str
-
-    equals: (address) ->
-        compare = (prop) =>
-            if this[prop] and address[prop]
-                if this[prop].toLowerCase() == address[prop].toLowerCase()
-                    return true
-                if address.generated and address[prop+'Abbr']
-                    return this[prop].toLowerCase() == address[prop+'Abbr'].toLowerCase()
-                else if this.generated and this[prop+'Abbr']
-                    return this[prop+'Abbr'].toLowerCase() == address[prop].toLowerCase()
-                else
-                    return false
-            return !this[prop] and !address[prop]
-        if @isObject and address.isObject
-            return compare('city') && compare('state') && compare('country')
-        else if @isObject and not address.isObject
-            #address was provided as a string, and now we must check if the provided address is indeed one of the ones returned
-            props = ['streetNumber', 'street', 'city', 'state', 'country', 'postalCode']
-            otherAddress = address.toString().toLowerCase();
-            if @toString() == otherAddress
-              return true
-                
-                
-            foundProps = 0
-            haveProps = 0
-            find = (val) ->
-                val = val.toLowerCase()
-                oldlen = otherAddress.length
-                otherAddress = otherAddress.replace(new RegExp("\\b"+val+"\\b", "i"), "")
-                if oldlen != otherAddress.length
-                    foundProps++
-                    return true
-                return false
-
-            for prop in props
-                value = @[prop]
-                if value != undefined
-                    found = find(@[prop])
-                    if not found and prop in ["state", "country", "street"] and @[prop+"Abbr"] != undefined
-                        found = find(@[prop+"Abbr"])
-                    if not found and prop == "country" and value.toLowerCase() == "united states"
-                        found = find("usa")
-                    if not found and prop == "street"
-                        value = value.replace(/( street)/i, ' st')
-                        found = find(value)
-                        if not found
-                            value = value.replace(/( road)/i, ' rd')
-                            find(value)
-                    if not found and prop == "postalCode"
-                      haveProps-- #these arent always specified. if the rest of the address matches we dont care about this
-                    haveProps++
-
-            otherAddress = otherAddress.replace(/[ ,]/g, '')
-            #console.log("found:"+foundProps+" have:"+haveProps+" left: ["+otherAddress+"]")
-            return foundProps == haveProps and otherAddress.length == 0
-
-        else
-            return @toString().toLowerCase() == address.toString().toLowerCase()
-
+       
 
 ###
     validate an input address.
@@ -158,34 +195,46 @@ exports.Address = class Address
         geocodingResponse - the json object that i got from google API
 
 ###
-exports.validate = (inputAddr, cb) ->
-    inputAddress =  if inputAddr instanceof Address then inputAddr else new Address(inputAddr)
+defaultMatchType = matchType.streetAddress
+exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
+  if arguments.length == 2
+    cb = addressType
+    addressType = defaultMatchType
 
-    qs = {'sensor':false, 'address': inputAddress.toString()}
-
-    opts =
-        json: true,
-        url: "http://maps.googleapis.com/maps/api/geocode/json"
-        method: 'GET'
-        qs: qs
-
-    request(opts, (err, response, body) ->
-        return cb(err, null, null) if err
-        if body.results.length == 0
-            return cb(null, [], [], body)
-        if response.statusCode != 200
-            return cb(new Error('Google geocode API returned status code of #{response.statusCode}', [], [], body))
-
-        validAddresses = []
-        inexactMatches = []
-        _.each(body.results, (result) ->
-            address = new Address(result)
-
-            if address.equals(inputAddress)
-                validAddresses.push(address)
-            else
-                inexactMatches.push(address)
-
-        )
-        cb(null, validAddresses, inexactMatches, body)
-    )
+  inputAddress =  if inputAddr instanceof Address then inputAddr else new Address(inputAddr)
+  
+  qs = {'sensor':false, 'address': inputAddress.toString(), region: options.countryBias}
+  if options.countryMatch
+    qs.components = "country:#{options.countryMatch}"
+  
+  opts =
+      json: true,
+      url: "http://maps.googleapis.com/maps/api/geocode/json"
+      method: 'GET'
+      qs: qs
+  
+  request(opts, (err, response, body) ->
+      return cb(err, null, null) if err
+      if body.results.length == 0
+          return cb(null, [], [], body)
+      if response.statusCode != 200
+          return cb(new Error('Google geocode API returned status code of #{response.statusCode}', [], [], body))
+  
+      validAddresses = []
+      inexactMatches = []
+      _.each(body.results, (result) ->
+        address = new Address(result)
+        
+        if addressType == matchType.unknown
+          if matchUnknownType(address, inputAddress)
+            validAddresses.push(address)
+          else
+            inexactMatches.push(address)
+        else if addressType == address.matchType
+          if address.exactMatch
+            validAddresses.push(address)
+          else 
+            inexactMatches.push(address)
+      )
+      cb(null, validAddresses, inexactMatches, body)
+  )
