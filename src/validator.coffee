@@ -5,9 +5,8 @@ options =
   countryBias: "us" #more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
   countryMatch: null #match results in this country only. (ISO 3166-1 country code)
 
-exports.setOptions = (countryBias, countryMatch=null) ->
-  options.countryBias = countryBias
-  options.countryMatch = countryMatch
+exports.setOptions = (opts) ->
+  _.extend(options, opts)
 
   
 matchUnknownType = (known, unknown) ->
@@ -70,7 +69,7 @@ matchUnknownType = (known, unknown) ->
 
 
 addressMatch =
-  streetAddress: [{location_type: "ROOFTOP", types: ["street_address"], exact: true}, {location_type: "RANGE_INTERPOLATED", types: ["street_address"], exact: falsefalse}]
+  streetAddress: [{location_type: "ROOFTOP", types: ["street_address"], exact: true}, {location_type: "RANGE_INTERPOLATED", types: ["street_address"], exact: false}]
   route: [{location_type: "GEOMETRIC_CENTER", types: ["route"], exact: true}]
   city: [{location_type: "APPROXIMATE", types: [ "locality", "political" ], exact: true}]
   state: [{location_type: "APPROXIMATE", types:  [ "administrative_area_level_1", "political" ], exact: true}]
