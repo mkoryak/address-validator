@@ -14,7 +14,7 @@ npm install address-validator
 
 [on npm registry](https://npmjs.org/package/address-validator)
 
-Using
+Usage
 -----
 
 
@@ -34,7 +34,9 @@ var address = new Address({
 //the passed in address does not need to be an address object it can be a string. (address objects will give you a better likelihood of finding an exact match)
 address = '100 North Washington St, Boston, MA, US';
 
-addressValidator.validate(address, function(err, exact, inexact){
+//`validator.match.streetAddress` -> tells the validator that you think the input should be a street address. This data makes the validator more accurate. 
+// But, sometimes you dont know.. in that cause you should use `validator.match.unknown`
+addressValidator.validate(address, validator.match.streetAddress, function(err, exact, inexact){
     console.log('input: ', address.toString())
     console.log('match: ', _.map(exact, function(a) {
       return a.toString();
@@ -79,19 +81,30 @@ API
 
     addressValidator = require('address-validator');
 
-    addressValidator.validate
+    addressValidator.validate(inputAddr, [addressType, ] cb)
     -------------------------
 
     validate an input address.
 
-    inputAddr: validator.Address object or map with 'street', 'city', 'state', 'country' keys, or string address
-    cb: function(err, validAddresses, inexactMatches, geocodingResponse)
-        err - something went wrong calling the google api
-        validAddresses - list of Address objects. These are exact matches to your input, and will have proper spelling, caps etc. Its best that you use this instead of what you had
-        inexactMatches - list of Address objects. Incomplete addresses or addresses that do not match your input address. useful for 'did you mean?' type UIs
-        geocodingResponse - the json object that i got from google API
+    `inputAddr`: validator.Address object or map with 'street', 'city', 'state', 'country' keys, or string address
+    `addressType`: validator.match.[key] where key is: streetAddress, route, city, state, country, unknown
+        This tells the validator the type of an address you are expecting to validate. default is `validator.match.streetAddress` (you may omit this arg).
+    `cb`: `function(err, validAddresses, inexactMatches, geocodingResponse)`
+        `err` - something went wrong calling the google api
+        `validAddresses` - list of Address objects. These are exact matches to your input, and will have proper spelling, caps etc. Its best that you use this instead of what you had
+        `inexactMatches` - list of Address objects. Incomplete addresses or addresses that do not match your input address. useful for 'did you mean?' type UIs
+        `geocodingResponse` - the json object that i got from google API
 
-    addressValidator.Address
+    addressValidator.setOptions(options)
+    -------------------------
+    
+    set address lookup options
+    
+    `options`: an object containing: 
+      `countryBias`: more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
+      `countryMatch`: match results in this country only. (ISO 3166-1 country code)
+    
+    addressValidator.Address class
     ------------------------
 
     Address object that provides useful methods. Create a new one by
@@ -114,10 +127,8 @@ API
             location: {lat: 43.233332, lon: 23.2222243}
 
         Methods:
-            toString(useCountryAbbr, useStateAbbr, useStreetAbbr) - returns a string representing the address. currently geared towards North American addresses
+            `toString(useCountryAbbr, useStateAbbr, useStreetAbbr)` - returns a string representing the address. currently geared towards North American addresses
                 useCountryAbbr = [optional] default: true - the resulting address string should use country abbr, not the full country name
                 useStateAbbr   = [optional] default: true - the resulting address string should use state abbr, not the full state name
                 useStreetAbbr  = [optional] default: false - the resulting address string should use street name abbr, not the full street name
                 Note: the abbriviated values will only be used if they are available. The Address objects returned to you from the validate callback may have these available.
-            equals(anotherAddress) - check if 2 addresses are probably* the same. IT DOES NOT CHECK STREET NAME/NUMBER
-
