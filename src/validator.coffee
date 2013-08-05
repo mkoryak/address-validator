@@ -1,6 +1,5 @@
 _ = require('underscore')
 request = require('request')
-async = require('async')
 
 options = 
   countryBias: "us" #more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
@@ -11,17 +10,17 @@ exports.setOptions = (opts) ->
 
 addressMatch =
   streetAddress: [
-    {location_type: "ROOFTOP", types: ["street_address"], exact: true, places: "geocode"},
-    {location_type: "RANGE_INTERPOLATED", types: ["street_address"], exact: false, places: "geocode"}
+    {location_type: "ROOFTOP", types: ["street_address"], exact: true},
+    {location_type: "RANGE_INTERPOLATED", types: ["street_address"], exact: false}
   ]
-  route: [{location_type: "GEOMETRIC_CENTER", types: ["route"], exact: true, places: "(regions)"}]
+  route: [{location_type: "GEOMETRIC_CENTER", types: ["route"], exact: true}]
   city: [
-    {location_type: "APPROXIMATE", types: [ "locality", "political" ], exact: true, places: "(cities)"},
-    {location_type: "APPROXIMATE", types: [ 'sublocality', 'political'], exact: true, places: "(cities)"},
+    {location_type: "APPROXIMATE", types: [ "locality", "political" ], exact: true},
+    {location_type: "APPROXIMATE", types: [ 'sublocality', 'political'], exact: true},
   ]
-  state: [{location_type: "APPROXIMATE", types:  [ "administrative_area_level_1", "political" ], exact: true, places: "(cities)"}]
-  country: [{location_type: "APPROXIMATE", types:  [ "country", "political" ], exact: true, places: "(cities)"}]
-  unknown: [{location_type: "unknown", types:  ["unknown"], exact: true, places: "(cities)"}] #wont match anything in the response.
+  state: [{location_type: "APPROXIMATE", types:  [ "administrative_area_level_1", "political" ], exact: true}]
+  country: [{location_type: "APPROXIMATE", types:  [ "country", "political" ], exact: true}]
+  unknown: [{location_type: "unknown", types:  ["unknown"], exact: true}] #wont match anything in the response.
 
 
 exports.match = matchType = {}
@@ -143,7 +142,7 @@ exports.Address = class Address
           _.each(addressMatch, (list, name) =>
             _.each(list, (obj) =>
        #       console.log("checking #{name}: #{obj.types} - #{address.types} = #{_.difference(obj.types, address.types)}")
-              if((address.reference or obj.location_type == address.geometry.location_type) and _.difference(obj.types, address.types).length == 0)
+              if(((address.reference and obj.exact) or obj.location_type == address.geometry.location_type) and _.difference(obj.types, address.types).length == 0)
                 @matchType = name
                 if not address.reference and not obj.exact
                   @exactMatch = false
@@ -155,6 +154,7 @@ exports.Address = class Address
           [x, streetNum] = getComponent('street_number', false)
           [streetAbbr, street] = getComponent('route', false)
           [x, city] = getComponent('locality')
+          [x, borough] = getComponent('sublocality')
           [stateAbbr, state] = getComponent('administrative_area_level_1')
           [countryAbbr, country] = getComponent('country')
           [postalCode, x] = getComponent('postal_code', false)
@@ -163,6 +163,7 @@ exports.Address = class Address
             street: street
             streetAbbr: streetAbbr
             city: city
+            borough: borough
             state: state
             stateAbbr: stateAbbr
             country: country
@@ -197,7 +198,7 @@ exports.Address = class Address
             str = "#{this.streetNumber} #{str}"
         return str
 
-lookupPlaceReference = (placeReference,  cb) ->
+exports.lookupPlaceReference = lookupPlaceReference = (placeReference,  cb) ->
 
   request(
     json: true
@@ -213,7 +214,7 @@ lookupPlaceReference = (placeReference,  cb) ->
         cb(new Error("Reference not found"))
   )
   
-validatePlaceReference = (reference, addressType=defaultMatchType, cb) ->
+exports.validatePlaceReference = validatePlaceReference = (reference, addressType=defaultMatchType, cb) ->
   if arguments.length == 2
     cb = addressType
     addressType = defaultMatchType
@@ -221,19 +222,10 @@ validatePlaceReference = (reference, addressType=defaultMatchType, cb) ->
   if addressType == matchType.unknown
     throw new Error("Cannot use unknown address type with this method")
     
-  validAddresses = []
-  inexactMatches = []
   lookupPlaceReference(reference, (err, result) ->
-    cb(err) if err
+    return cb(err) if err
     address = new Address(result)
-    
-    if addressType == address.matchType
-      if address.exactMatch
-        validAddresses.push(address)
-      else
-        inexactMatches.push(address)
-
-    cb(null, validAddresses, inexactMatches)
+    cb(err, address, result, null)
   )
 ###
     validate an input address.
@@ -272,8 +264,22 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
       if resp.statusCode != 200
           return cb(new Error('Google places API returned http status code of #{resp.statusCode}', [], [], body))
   
-      validatePlaceReference(body.predictions[0].reference, addressType, (err, valid, inexact) ->
-        cb(err, valid, inexact, body)
+      valid = []
+      _.each(body.predictions, (prediction) ->
+        console.log("prediction: ", prediction)
+        list = addressMatch[addressType]
+        _.each(list, (obj) =>
+          console.log("checking #{addressType}: #{obj.types} - #{prediction.types} = #{_.difference(prediction.types, obj.types).join("") == "geocode"}")
+          if(obj.exact and _.difference(prediction.types, obj.types).join("") == "geocode" )
+            valid.push(prediction)
+        )
+        console.log("\n")
+      )
+      console.log("valid:", valid)
+      validatePlaceReference((valid[0] or body.predictions[0]).reference, addressType, (err, result) ->
+        cb(err) if err
+        address = new Address(result)
+        cb(err, address, result, body)
       )
       
   )

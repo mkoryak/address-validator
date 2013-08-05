@@ -10,17 +10,12 @@ go = () -> #this is prevents us from going over the rate limit
   if q.length
     [input, type] = q.pop()
     inputAddress = new Address(input)
-    validator.validate(inputAddress, type, (err, validAddresses, inexactMatches) ->
+    validator.validate(inputAddress, type, (err, address, result) ->
       console.log("input: #{inputAddress.toString()} -- type: #{type}")
       if err
         console.log(err)
       else
-        console.log('address: ', _.map(validAddresses, (a) -> 
-          "#{a.toString()} -- type: #{a.matchType}"
-        ))
-        console.log('did you mean: ', _.map(inexactMatches, (a) ->
-          "#{a.toString()} -- type: #{a.matchType}"
-        ))
+        console.log("#{address?.toString()} -- type: #{address?.matchType}")
       console.log('\n')
     )
     setTimeout(go, 300)
@@ -65,7 +60,7 @@ address6 =
 console.log("********* There is a 300ms pause between requests as not to go over the API rate limit *********\n\n")
 validator.setOptions(
   countryMatch: "us" #all results must be from the US. 
-  apiKey: "ha!"
+  apiKey: "AIzaSyDkFbdHqnQkt7aLXeaDXOY5SIRRgvs4IZI"
 )
 #validateAddress(address1, validator.match.unknown)
 #validateAddress(address2, validator.match.unknown)
@@ -77,7 +72,7 @@ validator.setOptions(
 #validateAddress('100 north washington st, bostont', validator.match.unknown);
 #validateAddress('100 North Washington Street, Boston, MA, US', validator.match.unknown);
 #validateAddress('100 north washington st, boston, ma, us', validator.match.unknown);
-validateAddress('jamaica plain, ma', validator.match.city);
+validateAddress('Berkshire, MA', validator.match.city);
 
 go()
 #
