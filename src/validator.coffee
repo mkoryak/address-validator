@@ -156,6 +156,7 @@ exports.Address = class Address
           [x, city] = getComponent('locality')
           [x, borough] = getComponent('sublocality')
           [stateAbbr, state] = getComponent('administrative_area_level_1')
+          [provinceAbbr, province] = getComponent('administrative_area_level_2')
           [countryAbbr, country] = getComponent('country')
           [postalCode, x] = getComponent('postal_code', false)
           address =
@@ -166,6 +167,8 @@ exports.Address = class Address
             borough: borough
             state: state
             stateAbbr: stateAbbr
+            provinceAbbr: provinceAbbr
+            province: province
             country: country
             countryAbbr: countryAbbr
             postalCode: postalCode
@@ -276,9 +279,8 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
         console.log("\n")
       )
       console.log("valid:", valid)
-      validatePlaceReference((valid[0] or body.predictions[0]).reference, addressType, (err, result) ->
+      validatePlaceReference((valid[0] or body.predictions[0]).reference, addressType, (err, address, result) ->
         cb(err) if err
-        address = new Address(result)
         cb(err, address, result, body)
       )
       
