@@ -261,11 +261,11 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
     url: "https://maps.googleapis.com/maps/api/place/autocomplete/json"
     qs: qs
     (err, resp, body) ->
-      return cb(err, null, null) if err
+      return cb(err, null, null, body) if err
       if body.predictions?.length == 0
-          return cb(null, [], [], body)
+          return cb(null, null, null, body)
       if resp.statusCode != 200
-          return cb(new Error('Google places API returned http status code of #{resp.statusCode}', [], [], body))
+          return cb(new Error('Google places API returned http status code of #{resp.statusCode}', null, null, body))
   
       valid = []
       _.each(body.predictions, (prediction) ->
@@ -280,7 +280,7 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
       )
       console.log("valid:", valid)
       validatePlaceReference((valid[0] or body.predictions[0]).reference, addressType, (err, address, result) ->
-        cb(err) if err
+        cb(err, null, null, body) if err
         cb(err, address, result, body)
       )
       
