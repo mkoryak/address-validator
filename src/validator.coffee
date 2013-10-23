@@ -2,7 +2,7 @@ _ = require('underscore')
 request = require('request')
 
 options = 
-  countryBias: "us" #more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
+ # countryBias: "us" #more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
   apiKey: "YOUR_PLACES_API_KEY"
 
 exports.setOptions = (opts) ->
@@ -28,7 +28,7 @@ _.each(addressMatch, (list, name) ->
   matchType[name] = name
 )
 
-defaultMatchType = matchType.streetAddress
+defaultMatchType = addressMatch.streetAddress
   
 matchUnknownType = (known, unknown) ->
     compare = (prop) =>
@@ -134,6 +134,7 @@ exports.Address = class Address
             lat: address.geometry?.location?.lat
             lon: address.geometry?.location?.lng
 
+          @formattedAddress = address.formattedAddress;
           #figure out the match type
           if address.reference 
             @exactMatch = true #comes from a places reference lookup so its an exact match
@@ -198,7 +199,7 @@ exports.Address = class Address
             arr.push(this[prop]) if this[prop]
         str = arr.join(', ')
         if @streetNumber
-            str = "#{this.streetNumber} #{str}"
+            str = "#{@streetNumber} #{str}"
         return str
 
 exports.lookupPlaceReference = lookupPlaceReference = (placeReference,  cb) ->
@@ -246,7 +247,7 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
     cb = addressType
     addressType = defaultMatchType
 
-  if addressType == matchType.unknown
+  if addressType == addressMatch.unknown
     throw new Error("Cannot use unknown address type with this method")
 
   inputAddress =  if inputAddr instanceof Address then inputAddr else new Address(inputAddr)
@@ -269,16 +270,16 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
   
       valid = []
       _.each(body.predictions, (prediction) ->
-        console.log("prediction: ", prediction)
+       # console.log("prediction: ", prediction)
         list = addressMatch[addressType]
         _.each(list, (obj) =>
-          console.log("checking #{addressType}: #{obj.types} - #{prediction.types} = #{_.difference(prediction.types, obj.types).join("") == "geocode"}")
+      #    console.log("checking #{addressType}: #{obj.types} - #{prediction.types} = #{_.difference(prediction.types, obj.types).join("") == "geocode"}")
           if(obj.exact and _.difference(prediction.types, obj.types).join("") == "geocode" )
             valid.push(prediction)
         )
-        console.log("\n")
+    #    console.log("\n")
       )
-      console.log("valid:", valid)
+  #    console.log("valid:", valid)
       validatePlaceReference((valid[0] or body.predictions[0]).reference, addressType, (err, address, result) ->
         cb(err, null, null, body) if err
         cb(err, address, result, body)
