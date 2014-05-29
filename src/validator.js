@@ -317,7 +317,7 @@
       qs.key = options.key;
       protocol = 'https'
     }
-    
+
     opts = {
       json: true,
       url: protocol + "://maps.googleapis.com/maps/api/geocode/json",
@@ -329,12 +329,19 @@
       if (err) {
         return cb(err, null, null);
       }
+
+      if (response.statusCode !== 200) {
+        return cb('Google geocode API returned status code of #{response.statusCode}', [], [], body);
+      }
+
+      if (body.status.toLowerCase() !== 'ok') {
+        return cb('Google returned error: ' + body.status + ' - ' + body.error_message, [], [], body);
+      }
+
       if (body.results.length === 0) {
         return cb(null, [], [], body);
       }
-      if (response.statusCode !== 200) {
-        return cb(new Error('Google geocode API returned status code of #{response.statusCode}', [], [], body));
-      }
+
       validAddresses = [];
       inexactMatches = [];
       _.each(body.results, function(result) {
