@@ -293,7 +293,9 @@
   defaultMatchType = matchType.streetAddress;
 
   exports.validate = function(inputAddr, addressType, cb) {
-    var inputAddress, opts, qs;
+    var inputAddress, opts, qs,
+      protocol = 'http';
+
     if (addressType == null) {
       addressType = defaultMatchType;
     }
@@ -310,9 +312,15 @@
     if (options.countryMatch) {
       qs.components = "country:" + options.countryMatch;
     }
+
+    if (options.key) {
+      qs.key = options.key;
+      protocol = 'https'
+    }
+    
     opts = {
       json: true,
-      url: "http://maps.googleapis.com/maps/api/geocode/json",
+      url: protocol + "://maps.googleapis.com/maps/api/geocode/json",
       method: 'GET',
       qs: qs
     };
