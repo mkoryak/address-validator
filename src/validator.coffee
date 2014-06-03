@@ -4,6 +4,7 @@ request = require('request')
 options = 
   countryBias: "us" #more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
   countryMatch: null #match results in this country only. (ISO 3166-1 country code)
+  key: null #optional google api key (if used will submit requests over https)
 
 exports.setOptions = (opts) ->
   _.extend(options, opts)
@@ -205,20 +206,27 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
   qs = {'sensor':false, 'address': inputAddress.toString(), region: options.countryBias}
   if options.countryMatch
     qs.components = "country:#{options.countryMatch}"
-  
+
+  protocol = 'http'
+  if options.key
+    qs.key = options.key
+    protocol = 'https'
+
   opts =
       json: true,
-      url: "http://maps.googleapis.com/maps/api/geocode/json"
+      url: "#{protocol}://maps.googleapis.com/maps/api/geocode/json"
       method: 'GET'
       qs: qs
   
   request(opts, (err, response, body) ->
-      return cb(err, null, null) if err
-      if body.results.length == 0
-          return cb(null, [], [], body)
-      if response.statusCode != 200
-          return cb(new Error('Google geocode API returned status code of #{response.statusCode}', [], [], body))
-  
+      return cb(err, null, null, body) if err
+
+      return cb(null, [], [], body) if body.results.length == 0
+
+      return cb(new Error("Google geocode API returned status code of #{response.statusCode}"), [], [], body)  if response.statusCode isnt 200
+
+      return cb(new Error("Google returned error: #{body.status} - #{body.error_message}"), [], [], body)  if body.status.toLowerCase() isnt "ok"
+
       validAddresses = []
       inexactMatches = []
       _.each(body.results, (result) ->
