@@ -203,7 +203,7 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
 
   inputAddress =  if inputAddr instanceof Address then inputAddr else new Address(inputAddr)
   
-  qs = {'sensor':false, 'address': inputAddress.toString(), region: options.countryBias}
+  qs = {'sensor':false, 'address': inputAddress.toString(), region: options.countryBias, language: options.language}
   if options.countryMatch
     qs.components = "country:#{options.countryMatch}"
 
