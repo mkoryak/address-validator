@@ -107,6 +107,7 @@ set address lookup options
       `countryBias`: more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
       `countryMatch`: match results in this country only. (ISO 3166-1 country code)
       `key`: optional google api key (if used will submit requests over https)
+	  `language`: optional locale to translate the results into, 'DE' for German, etc.
 
 addressValidator.Address class
 ------------------------
