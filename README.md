@@ -6,7 +6,7 @@ Validate street addresses in nodejs using google geocoding api.
 
 From an input address the lib will return to you a valid address with correct spelling and lat/lon coords, and/or a set of inexact matches that can be used to drive a 'did you mean?' widget.
 
-Currently geared towards North American Addresses.
+Currently geared towards North American Addresses but works with all languages.
 
 [![Donate](http://programmingdrunk.com/donate-coffee.png)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=SDJJ42BTC46LY&lc=US&item_name=floatThead&currency_code=USD&bn=PP%2dDonationsBF%3adonate%2dcoffee%2epng%3aNonHosted)
 
@@ -57,7 +57,7 @@ addressValidator.validate(address, validator.match.streetAddress, function(err, 
 
 Some example inputs/outputs from above:
 
-```
+``` bash
 input:  12 proctor rd, Massachussetts, US
 exact:  []
 did you mean:  [ '12 Proctor Road, Chelmsford, MA, US',
@@ -82,32 +82,32 @@ did you mean:  [ '1 Main Street, San Diego, CA, US' ]
 API
 =======
 
-    `addressValidator = require('address-validator');`
+`addressValidator = require('address-validator');`
 
 addressValidator.validate(inputAddr, [addressType, ] cb)
 -------------------------
 
 validate an input address.
-
-`inputAddr` - validator.Address object or map with 'street', 'city', 'state', 'country' keys, or string address
-`addressType` - validator.match.[key] where key is: streetAddress, route, city, state, country, unknown
-        This tells the validator the type of an address you are expecting to validate. default is `validator.match.streetAddress` (you may omit this arg).
-`cb`: `function(err, validAddresses, inexactMatches, geocodingResponse)`
-`err` - something went wrong calling the google api
-`validAddresses` - list of Address objects. These are exact matches to your input, and will have proper spelling, caps etc. Its best that you use this instead of what you had
-`inexactMatches` - list of Address objects. Incomplete addresses or addresses that do not match your input address. useful for 'did you mean?' type UIs
-`geocodingResponse` - the json object that i got from google API
+    
+    `inputAddr` - validator.Address object or map with 'street', 'city', 'state', 'country' keys, or string address
+    `addressType` - validator.match.[key] where key is: streetAddress, route, city, state, country, unknown
+            This tells the validator the type of an address you are expecting to validate. default is `validator.match.streetAddress` (you may omit this arg).
+    `cb`: `function(err, validAddresses, inexactMatches, geocodingResponse)`
+        `err` - something went wrong calling the google api
+        `validAddresses` - list of Address objects. These are exact matches to your input, and will have proper spelling, caps etc. Its best that you use this instead of what you had
+        `inexactMatches` - list of Address objects. Incomplete addresses or addresses that do not match your input address. useful for 'did you mean?' type UIs
+        `geocodingResponse` - the json object that i got from google API
 
 addressValidator.setOptions(options)
 -------------------------
 
 set address lookup options
 
-`options`: an object containing: 
-`countryBias`: more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
-`countryMatch`: match results in this country only. (ISO 3166-1 country code)
-`key`: optional google api key (if used will submit requests over https)
-`language`: optional locale to translate the results into, 'DE' for German, etc.
+    `options`: an object containing: 
+        `countryBias`: more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
+        `countryMatch`: match results in this country only. (ISO 3166-1 country code)
+        `key`: optional google api key (if used will submit requests over https)
+        `language`: optional locale to translate the results into, 'DE' for German, etc.
 
 addressValidator.Address class
 ------------------------
