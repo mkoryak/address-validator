@@ -221,11 +221,11 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
   request(opts, (err, response, body) ->
       return cb(err, null, null, body) if err
 
-      return cb(null, [], [], body) if body.results.length == 0
-
       return cb(new Error("Google geocode API returned status code of #{response.statusCode}"), [], [], body)  if response.statusCode isnt 200
 
       return cb(new Error("Google returned error: #{body.status} - #{body.error_message}"), [], [], body)  if body.status.toLowerCase() isnt "ok"
+
+      return cb(null, [], [], body) if body.results.length == 0
 
       validAddresses = []
       inexactMatches = []
