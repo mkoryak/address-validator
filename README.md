@@ -41,7 +41,7 @@ address = '100 North Washington St, Boston, MA, US';
 
 //`validator.match.streetAddress` -> tells the validator that you think the input should be a street address. This data makes the validator more accurate. 
 // But, sometimes you dont know.. in that cause you should use `validator.match.unknown`
-addressValidator.validate(address, validator.match.streetAddress, function(err, exact, inexact){
+addressValidator.validate(address, addressValidator.match.streetAddress, function(err, exact, inexact){
     console.log('input: ', address.toString())
     console.log('match: ', _.map(exact, function(a) {
       return a.toString();
