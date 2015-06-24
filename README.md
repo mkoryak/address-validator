@@ -8,7 +8,7 @@ From an input address the lib will return to you a valid address with correct sp
 
 Currently geared towards North American Addresses but works with all languages.
 
-[![Donate](http://programmingdrunk.com/donate-coffee.png)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=SDJJ42BTC46LY&lc=US&item_name=floatThead&currency_code=USD&bn=PP%2dDonationsBF%3adonate%2dcoffee%2epng%3aNonHosted)
+
 
 
 Install
@@ -18,6 +18,8 @@ npm install address-validator
 ```
 
 [on npm registry](https://npmjs.org/package/address-validator)
+
+![npm](https://nodei.co/npm/address-validator.png)
 
 Usage
 -----
