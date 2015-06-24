@@ -17,8 +17,6 @@ Install
 npm install address-validator
 ```
 
-[on npm registry](https://npmjs.org/package/address-validator)
-
 ![npm](https://nodei.co/npm/address-validator.png)
 
 Usage
