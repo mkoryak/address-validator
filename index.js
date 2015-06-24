@@ -1,2 +1,2 @@
-require('coffee-script')
-module.exports = require('./src/validator')
+require('coffee-script/register');
+module.exports = require('./src/validator.coffee'); 
