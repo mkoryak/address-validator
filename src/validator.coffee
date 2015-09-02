@@ -1,7 +1,7 @@
 _ = require('underscore')
 request = require('request')
 
-options = 
+options =
   countryBias: "us" #more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
   countryMatch: null #match results in this country only. (ISO 3166-1 country code)
   key: null #optional google api key (if used will submit requests over https)
@@ -9,7 +9,7 @@ options =
 exports.setOptions = (opts) ->
   _.extend(options, opts)
 
-  
+
 matchUnknownType = (known, unknown) ->
     compare = (prop) =>
       if known[prop] and unknown[prop]
@@ -113,7 +113,7 @@ _.each(addressMatch, (list, name) ->
 
 ###
 exports.Address = class Address
-   
+
     matchType: matchType.unknown
     exactMatch: null #can only be set on a @generated address
     constructor: (address, @isObject=false, @generated=false) ->
@@ -135,7 +135,7 @@ exports.Address = class Address
                   @exactMatch = false
             )
           )
-          
+
 
           getComponent = @componentFinder(address.address_components)
           [x, streetNum] = getComponent('street_number', false)
@@ -144,6 +144,7 @@ exports.Address = class Address
           [stateAbbr, state] = getComponent('administrative_area_level_1')
           [countryAbbr, country] = getComponent('country')
           [postalCode, x] = getComponent('postal_code', false)
+          [postalCodePrefix, x] = getComponent('postal_code_prefix', false)
           address =
             streetNumber: streetNum
             street: street
@@ -154,9 +155,10 @@ exports.Address = class Address
             country: country
             countryAbbr: countryAbbr
             postalCode: postalCode
+            postalCodePrefix: postalCodePrefix
             location: location
-          
-          
+
+
         _.each(address, (val, key) =>
             this[key] = val
         )
@@ -182,7 +184,7 @@ exports.Address = class Address
         if @streetNumber
             str = "#{this.streetNumber} #{str}"
         return str
-       
+
 
 ###
     validate an input address.
@@ -202,7 +204,7 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
     addressType = defaultMatchType
 
   inputAddress =  if inputAddr instanceof Address then inputAddr else new Address(inputAddr)
-  
+
   qs = {'sensor':false, 'address': inputAddress.toString(), region: options.countryBias, language: options.language}
   if options.countryMatch
     qs.components = "country:#{options.countryMatch}"
@@ -217,7 +219,7 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
       url: "#{protocol}://maps.googleapis.com/maps/api/geocode/json"
       method: 'GET'
       qs: qs
-  
+
   request(opts, (err, response, body) ->
       return cb(err, null, null, body) if err
 
@@ -231,7 +233,7 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
       inexactMatches = []
       _.each(body.results, (result) ->
         address = new Address(result)
-        
+
         if addressType == matchType.unknown
           if matchUnknownType(address, inputAddress)
             validAddresses.push(address)
@@ -240,7 +242,7 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
         else if addressType == address.matchType
           if address.exactMatch
             validAddresses.push(address)
-          else 
+          else
             inexactMatches.push(address)
       )
       cb(null, validAddresses, inexactMatches, body)

@@ -20,7 +20,7 @@
     "url": "git://github.com/mkoryak/address-validator.git"
   },
   "dependencies": {
-    "coffee-script": "~1.9.2",
+    "coffee-script": "~1.9.3",
     "underscore": "~1.4.4",
     "request": "~2.21.0"
   }
