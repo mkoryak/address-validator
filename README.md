@@ -1,18 +1,15 @@
 address-validator
 ======================
 
-
-Validate street addresses in nodejs using google geocoding api.
+> Validate street addresses in nodejs using google geocoding api.
 
 From an input address the lib will return to you a valid address with correct spelling and lat/lon coords, and/or a set of inexact matches that can be used to drive a 'did you mean?' widget.
 
 Currently geared towards North American Addresses but works with all languages.
 
-
-
-
 Install
 -------
+
 ``` bash
 npm install address-validator
 ```
@@ -21,7 +18,6 @@ npm install address-validator
 
 Usage
 -----
-
 
 ``` js
 var addressValidator = require('address-validator');
@@ -79,7 +75,6 @@ address:  []
 did you mean:  [ '1 Main Street, San Diego, CA, US' ]
 
 ```
-
 
 API
 =======
