@@ -1,4 +1,4 @@
-validator = require('../index')
+validator = require('../src/validator')
 Address = validator.Address
 _ = require('underscore')
 
