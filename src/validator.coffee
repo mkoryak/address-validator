@@ -138,14 +138,15 @@ exports.Address = class Address
 
 
           getComponent = @componentFinder(address.address_components)
-          [x, streetNum] = getComponent('street_number', false)
-          [streetAbbr, street] = getComponent('route', false)
+          [x, streetNum] = getComponent('street_number')
+          [streetAbbr, street] = getComponent('route')
           [x, city] = getComponent('locality')
           [stateAbbr, state] = getComponent('administrative_area_level_1')
           [countryAbbr, country] = getComponent('country')
-          [postalCode, x] = getComponent('postal_code', false)
-          [postalCodePrefix, x] = getComponent('postal_code_prefix', false)
+          [postalCode, x] = getComponent('postal_code')
+          [postalCodePrefix, x] = getComponent('postal_code_prefix')
           [colloquialArea, x] = getComponent('colloquial_area')
+          [sublocality, x] = getComponent('sublocality')
           address =
             streetNumber: streetNum
             street: street
@@ -158,6 +159,7 @@ exports.Address = class Address
             postalCode: postalCode
             postalCodePrefix: postalCodePrefix
             colloquialArea: colloquialArea
+            sublocality: sublocality
             location: location
 
 
@@ -168,9 +170,9 @@ exports.Address = class Address
         @addressStr = address
 
     componentFinder: (components) ->
-        return (type, type2="political") ->
+        return (type) ->
             it = _.find(components, (c) ->
-                return c.types[0] == type && (!type2 || c.types[1] == type2)
+                return _.contains(c.types, type)
             )
             return [it?.short_name, it?.long_name]
 
