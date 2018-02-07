@@ -145,6 +145,7 @@ exports.Address = class Address
           [countryAbbr, country] = getComponent('country')
           [postalCode, x] = getComponent('postal_code', false)
           [postalCodePrefix, x] = getComponent('postal_code_prefix', false)
+          [colloquialArea, x] = getComponent('colloquial_area')
           address =
             streetNumber: streetNum
             street: street
@@ -156,6 +157,7 @@ exports.Address = class Address
             countryAbbr: countryAbbr
             postalCode: postalCode
             postalCodePrefix: postalCodePrefix
+            colloquialArea: colloquialArea
             location: location
 
 
