@@ -1,8 +1,6 @@
 _ = require('underscore')
-url = require('url')
 request = require('request')
-querystring = require('querystring')
-HttpsProxyAgent = require( 'https-proxy-agent' )
+HttpsProxyAgent = require('https-proxy-agent')
 
 options =
   countryBias: "us" #more likely to find addresses in this country. Think of this as you where you are searching "from" to find results around you. (use ISO 3166-1 country code)
@@ -222,17 +220,16 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
     qs.key = options.key
     protocol = 'https'
 
-  endpoint = "#{protocol}://maps.googleapis.com/maps/api/geocode/json?#{querystring.stringify(qs)}";
-
-  opts = url.parse(endpoint);
-  opts.url = endpoint;
-  opts.method = 'GET';
-  opts.json = true;
+  opts =
+    json: true,
+    url: "#{protocol}://maps.googleapis.com/maps/api/geocode/json"
+    method: 'GET'
+    qs: qs
 
   if options.proxy
-    if options.key
-      opts.agent = new HttpsProxyAgent( options.proxy );
-    else
+    ### if options.key
+      opts.agent = new HttpsProxyAgent(options.proxy);
+    else ###
       opts.proxy = options.proxy
 
   request(opts, (err, response, body) ->
