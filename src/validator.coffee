@@ -227,9 +227,9 @@ exports.validate = (inputAddr, addressType=defaultMatchType, cb) ->
     qs: qs
 
   if options.proxy
-    ### if options.key
+    if options.key
       opts.agent = new HttpsProxyAgent(options.proxy);
-    else ###
+    else
       opts.proxy = options.proxy
 
   request(opts, (err, response, body) ->
