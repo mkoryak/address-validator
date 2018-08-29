@@ -105,6 +105,13 @@ set address lookup options
         `countryMatch`: match results in this country only. (ISO 3166-1 country code)
         `key`: optional google api key (if used will submit requests over https)
         `language`: optional locale to translate the results into, 'DE' for German, etc.
+        `proxy`: optional proxy address to pass the request through (`http://<proxy_address>:<proxy_port>`)
+
+> **`proxy` note**: when used without a `key` (request via http), the [`url`](https://nodejs.org/docs/latest/api/url.html) object submitted with the request adds the value provided to the `url.proxy` property.
+>
+> however, when used with a `key` (request via https), the `value` is used to create a [`https-proxy-agent`](https://www.npmjs.com/package/https-proxy-agent) and then added to the `url.agent` property to properly implement the [CONNECT HTTP method](https://en.wikipedia.org/wiki/HTTP_tunnel#HTTP_CONNECT_Tunneling).
+>
+> this is to overcome cases where requests made without a supplied agent are [transformed](https://tools.ietf.org/html/rfc7230#section-5.7.2) to scramble the request as a security measure, or in [configurations](https://cbonte.github.io/haproxy-dconv/1.8/configuration.html#4.2-option%20http-use-proxy-header) that only accept headers specified by [RFC7230](https://tools.ietf.org/html/rfc7230) (using the CONNECT method). note that using this method ensures the tunneling to work whether these proxy/firewall features are present or not.
 
 addressValidator.Address class
 ------------------------
