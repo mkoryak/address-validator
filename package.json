@@ -29,7 +29,9 @@
     "coffee-script": "~1.9.3"
   },
   "dependencies": {
-    "underscore": "~1.4.4",
-    "request": "~2.21.0"
+    "https-proxy-agent": "^2.2.1",
+    "querystring": "^0.2.0",
+    "request": "~2.21.0",
+    "underscore": "~1.4.4"
   }
 }
