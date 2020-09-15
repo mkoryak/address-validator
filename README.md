@@ -16,6 +16,14 @@ npm install address-validator
 
 ![npm](https://nodei.co/npm/address-validator.png)
 
+Getting an API key
+------------------
+
+Google has changed its API since I wrote this code, and now they require you to have a project with a billing account and the Geocoding API enabled.  
+See: https://developers.google.com/maps/documentation/geocoding/start
+
+This means that **this library will not function without an API key**!
+
 Usage
 -----
 
@@ -23,6 +31,11 @@ Usage
 var addressValidator = require('address-validator');
 var Address = addressValidator.Address;
 var _ = require('underscore');
+
+addressValidator.setOptions({
+  key: 'your Google maps API key with a billing account and geocoding API enabled',
+  // See: https://developers.google.com/maps/documentation/geocoding/start
+});
 
 //any of the props in this object are optional, also spelling does not have to be exact.
 var address = new Address({
