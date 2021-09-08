@@ -31,6 +31,6 @@
   "dependencies": {
     "https-proxy-agent": "~2.2.1",
     "request": "~2.47.0",
-    "underscore": "~1.4.4"
+    "underscore": "~1.12.1"
   }
 }
